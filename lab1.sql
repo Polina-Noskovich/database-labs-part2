@@ -1,5 +1,6 @@
 SET SERVEROUTPUT ON SIZE UNLIMITED;
--- Task 2
+
+-- Task 2: Вставка случайных данных в таблицу MyTable
 BEGIN
     FOR i IN 1..10000 LOOP
         INSERT INTO MyTable (id, val)
@@ -21,7 +22,7 @@ BEGIN
 END;
 /
 
--- Task 3
+-- Task 3: Функция для сравнения четных и нечетных значений
 CREATE OR REPLACE FUNCTION compare_even_odd
 RETURN VARCHAR2
 IS
@@ -63,9 +64,7 @@ BEGIN
 END;
 /
 
--- SELECT * FROM MyTable WHERE ROWNUM <= 10;
-
--- Task 4
+-- Task 4: Функция для генерации команды INSERT по введенному ID
 CREATE OR REPLACE FUNCTION generate_insert_command(p_id IN NUMBER)
 RETURN VARCHAR2
 IS
@@ -97,7 +96,6 @@ EXCEPTION
         RETURN 'ERROR: ' || SQLERRM;
 END;
 /
-SET SERVEROUTPUT ON SIZE UNLIMITED;
 
 -- Запрашиваем значение ID от пользователя
 ACCEPT p_id CHAR PROMPT 'Введите ID: ';
@@ -112,3 +110,115 @@ BEGIN
 END;
 /
 
+-- Task 5
+-- DML операции (INSERT, UPDATE, DELETE)
+
+-- 1. Процедура для вставки новой строки
+CREATE OR REPLACE PROCEDURE insert_record(p_id IN NUMBER, p_val IN NUMBER) 
+IS
+BEGIN
+    INSERT INTO MyTable (id, val) 
+    VALUES (p_id, p_val);
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Запись успешно вставлена: ID = ' || p_id || ', VAL = ' || p_val);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Произошла ошибка при вставке: ' || SQLERRM);
+END;
+/
+
+-- 2. Процедура для обновления существующей записи
+CREATE OR REPLACE PROCEDURE update_record(p_id IN NUMBER, p_new_val IN NUMBER) 
+IS
+BEGIN
+    UPDATE MyTable
+    SET val = p_new_val
+    WHERE id = p_id;
+
+    -- Проверяем, была ли затронута хотя бы одна строка
+    IF SQL%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('Запись с ID = ' || p_id || ' не найдена.');
+    ELSE
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('Запись успешно обновлена: ID = ' || p_id || ', Новый VAL = ' || p_new_val);
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Произошла ошибка при обновлении: ' || SQLERRM);
+END;
+/
+
+-- 3. Процедура для удаления записи
+CREATE OR REPLACE PROCEDURE delete_record(p_id IN NUMBER) 
+IS
+BEGIN
+    DELETE FROM MyTable
+    WHERE id = p_id;
+
+    -- Проверяем, была ли затронута хотя бы одна строка
+    IF SQL%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('Запись с ID = ' || p_id || ' не найдена.');
+    ELSE
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('Запись успешно удалена: ID = ' || p_id);
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Произошла ошибка при удалении: ' || SQLERRM);
+END;
+/
+
+-- Пример вызова процедур:
+
+-- Вставка записи с ID = 10001 и значением VAL = 500
+EXEC insert_record(10001, 500);
+
+-- Обновление записи с ID = 10001, новый VAL = 600
+EXEC update_record(10001, 600);
+
+-- Удаление записи с ID = 10001
+EXEC delete_record(10001);
+/
+
+-- Task 6
+CREATE OR REPLACE FUNCTION calculate_yearly_reward(p_monthly_salary IN NUMBER, p_annual_bonus_percent IN NUMBER)
+RETURN NUMBER
+IS
+    v_yearly_reward NUMBER;
+BEGIN
+    -- Проверка на корректность данных
+    IF p_monthly_salary < 0 THEN
+        DBMS_OUTPUT.PUT_LINE('Ошибка: Месячная зарплата не может быть отрицательной.');
+        RETURN -1; -- Возвращаем ошибку
+    ELSIF p_annual_bonus_percent < 0 THEN
+        DBMS_OUTPUT.PUT_LINE('Ошибка: Процент премиальных не может быть отрицательным.');
+        RETURN -1; -- Возвращаем ошибку
+    END IF;
+
+    -- Преобразуем процент в дробную форму
+    v_yearly_reward := (1 + p_annual_bonus_percent / 100) * 12 * p_monthly_salary;
+
+    -- Выводим рассчитанное вознаграждение
+    DBMS_OUTPUT.PUT_LINE('Общее вознаграждение за год: ' || v_yearly_reward);
+    
+    RETURN v_yearly_reward;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Произошла ошибка: ' || SQLERRM);
+        RETURN -1; -- Возвращаем ошибку
+END;
+/
+
+-- Пример вызова функции для вычисления вознаграждения:
+DECLARE
+    v_monthly_salary NUMBER := &p_monthly_salary; -- Месячная зарплата
+    v_annual_bonus_percent NUMBER := &p_annual_bonus_percent; -- Процент премиальных
+    v_yearly_reward NUMBER;
+BEGIN
+    v_yearly_reward := calculate_yearly_reward(v_monthly_salary, v_annual_bonus_percent);
+    IF v_yearly_reward >= 0 THEN
+        DBMS_OUTPUT.PUT_LINE('Рассчитанное общее вознаграждение: ' || v_yearly_reward);
+    END IF;
+END;
+/
