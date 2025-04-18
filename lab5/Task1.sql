@@ -1,0 +1,33 @@
+CREATE USER test_user IDENTIFIED BY password;
+GRANT CONNECT, RESOURCE TO test_user;
+
+GRANT CREATE ANY DIRECTORY TO test_user;
+
+CONNECT test_user/password;
+
+ALTER SESSION SET CURRENT_SCHEMA = test_user;
+
+SELECT USER FROM DUAL;
+
+
+
+-- 1
+CREATE TABLE TestTable1 (
+    id NUMBER PRIMARY KEY,
+    name VARCHAR2(100) NOT NULL,
+    value NUMBER NOT NULL
+);
+
+CREATE TABLE TestTable2 (
+    id NUMBER PRIMARY KEY,
+    name VARCHAR2(100) NOT NULL,
+    datetime TIMESTAMP NOT NULL
+);
+
+CREATE TABLE TestTable3 (
+    id NUMBER PRIMARY KEY,
+    name VARCHAR2(100) NOT NULL,
+    fk_id INT,
+    FOREIGN KEY (fk_id) REFERENCES TestTable2(id)
+    ON DELETE CASCADE
+);

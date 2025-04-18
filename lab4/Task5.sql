@@ -1,4 +1,3 @@
-
 CREATE OR REPLACE PROCEDURE JSON_ORM(
     json_data IN CLOB,
     v_sql_query OUT VARCHAR2,
